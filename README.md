@@ -16,7 +16,7 @@ Plain-file memory shared by every coding agent you use (Claude Code, Codex, pi, 
   daily/            untracked, machine-local, consumed by reflect
 ```
 
-`~/.hippo` is a git repo that tracks only `MEMORY.md`, `TOPIC_INDEX.md`, and `topics/`. Add a private remote to share memory across machines: each machine reflects its own daily notes, and `finish_reflection.sh` rebases and pushes.
+`~/.hippo` is a git repo that tracks only `MEMORY.md`, `TOPIC_INDEX.md`, and `topics/` - local history for audits and undo. Memory is single-machine by design: daily notes and reflections never leave the machine.
 
 ## Install
 
@@ -30,8 +30,6 @@ npx skills add kky42/memory-hippo -g -a claude-code -a codex -a pi
 ```
 
 Manual copy also works: put `skills/hippo` into `~/.agents/skills/` and `~/.claude/skills/`. Then append the block below to the end of each agent's global instructions (`~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, `~/.pi/agent/AGENTS.md`).
-
-Optional sync: `git -C ~/.hippo remote add origin <url> && git -C ~/.hippo push -u origin HEAD`.
 
 ## Workflows (in SKILL.md)
 

@@ -1,7 +1,7 @@
 #!/bin/sh
 # Final gate for a reflect: regenerate the topic index, doctor-check, commit, delete consumed daily files.
 # Usage: finish_reflection.sh YYYY-MM-DD   (D from reflect step 2, the date the daily list was made)
-# Exit 0 done, 1 bad usage or doctor failed (nothing committed, daily files kept), 2 committed locally but sync failed.
+# Exit 0 done, 1 bad usage or doctor failed (nothing committed, daily files kept).
 set -eu
 dir=${HIPPO_DIR:-$HOME/.hippo}
 here=$(cd "$(dirname "$0")" && pwd)
@@ -22,12 +22,3 @@ for f in daily/*.md; do
   case $b in [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.md) ;; *) continue ;; esac
   if [ "$b" \< "$cutoff" ]; then rm -f "$f"; echo "consumed daily/$b"; fi
 done
-
-[ -n "$(git remote)" ] || exit 0
-if ! git pull -q --rebase --autostash; then
-  git rebase --abort 2>/dev/null || true
-  echo "sync failed: remote has conflicting changes" >&2
-  exit 2
-fi
-git push -q || { echo "sync failed: push rejected" >&2; exit 2; }
-echo "synced"
