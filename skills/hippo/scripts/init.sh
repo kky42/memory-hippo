@@ -1,5 +1,6 @@
 #!/bin/sh
-# Create the memory store. Safe to rerun: never overwrites existing files.
+# Create the memory store, then inject the block into each FILE given. Safe to rerun:
+# never overwrites store files; replaces only the <memory-hippo> block in FILEs.
 set -eu
 dir=${HIPPO_DIR:-$HOME/.hippo}
 here=$(cd "$(dirname "$0")" && pwd)
@@ -31,3 +32,38 @@ if [ ! -d .git ]; then
   git commit -qm "init"
 fi
 echo "hippo store ready at $dir"
+
+# Inject block.md into each agent instruction file given as an argument:
+# replace an existing <memory-hippo> block, or append one at the end.
+block="$here/../block.md"
+for f in "$@"; do
+  mkdir -p "$(dirname "$f")"
+  [ -f "$f" ] || : > "$f"
+  opens=$(grep -c '^<memory-hippo>$' "$f" || true)
+  closes=$(grep -c '^</memory-hippo>$' "$f" || true)
+  tmp=$(mktemp)
+  if [ "$opens" -eq 0 ] && [ "$closes" -eq 0 ]; then
+    cat "$f" > "$tmp"
+    if [ -s "$f" ]; then
+      [ -z "$(tail -c 1 "$f")" ] || echo >> "$tmp"
+      echo >> "$tmp"
+    fi
+    cat "$block" >> "$tmp"
+  elif [ "$opens" -eq 1 ] && [ "$closes" -eq 1 ]; then
+    awk -v blk="$block" '
+      /^<memory-hippo>$/ { while ((getline l < blk) > 0) print l; skip = 1; next }
+      skip { if ($0 == "</memory-hippo>") skip = 0; next }
+      { print }' "$f" > "$tmp"
+  else
+    rm -f "$tmp"
+    echo "$f: malformed <memory-hippo> block; fix it by hand" >&2
+    exit 1
+  fi
+  if cmp -s "$tmp" "$f"; then
+    echo "$f: block up to date"
+  else
+    cat "$tmp" > "$f"
+    echo "$f: block written"
+  fi
+  rm -f "$tmp"
+done
