@@ -9,8 +9,16 @@ if [ -d "$dir" ] && [ ! -f "$dir/MEMORY.md" ] && [ -n "$(ls -A "$dir")" ]; then
   echo "$dir exists and is not a hippo store; move it away first" >&2
   exit 1
 fi
-mkdir -p "$dir/topics" "$dir/daily"
+mkdir -p "$dir/topics"
 cd "$dir"
+
+# older stores kept notes in daily/YYYY-MM-DD.md; queue them, oldest first, into PENDING.md
+if [ -d daily ]; then
+  for f in daily/*.md; do
+    if [ -e "$f" ]; then cat "$f" >> PENDING.md; rm "$f"; fi
+  done
+  rmdir daily 2>/dev/null || echo "daily/ still has non-note files; left in place" >&2
+fi
 
 [ -f MEMORY.md ] || : > MEMORY.md
 [ -f topics/.gitkeep ] || : > topics/.gitkeep

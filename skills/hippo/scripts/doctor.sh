@@ -48,9 +48,26 @@ if grep -in '(as of' "$@" 2>/dev/null; then
   say '"(as of" stamps in the lines above; a date belongs only inside a fact, like a deadline'
 fi
 
+if grep -nE '\(20[0-9]{2}-[0-9]{2}-[0-9]{2}\)' "$@" 2>/dev/null; then
+  say 'date stamps in the lines above; a date belongs only inside a fact, like a deadline'
+fi
+
+today=$(date +%F)
+for f in "$@"; do
+  for d in $(grep -oE '20[0-9]{2}-[0-9]{2}-[0-9]{2}' "$f" | sort -u); do
+    if [ "$d" \> "$today" ]; then echo "warn: $f: date $d is in the future; fine for a deadline, otherwise fix it"; fi
+  done
+done
+
 if grep -lE '^(<<<<<<<|>>>>>>>)' "$@" 2>/dev/null; then
   say "conflict markers in the files above"
 fi
+
+# the same path or issue number in several files often means one fact kept in two places
+for f in "$@"; do
+  grep -oE '~/[A-Za-z0-9._/-]*[A-Za-z0-9_/-]|#[0-9]+' "$f" | sort -u | sed "s|\$|	$f|"
+done | awk -F'\t' '{ n[$1]++; at[$1] = at[$1] " " $2 }
+  END { for (t in n) if (n[t] > 1) print "warn: " t " appears in" at[t] }' | sort
 
 [ "$bad" -eq 0 ] && echo ok
 exit "$bad"

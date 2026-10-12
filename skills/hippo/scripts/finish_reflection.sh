@@ -1,24 +1,25 @@
 #!/bin/sh
-# Final gate for a reflect: regenerate the topic index, doctor-check, commit, delete consumed daily files.
-# Usage: finish_reflection.sh YYYY-MM-DD   (D from reflect step 2, the date the daily list was made)
-# Exit 0 done, 1 bad usage or doctor failed (nothing committed, daily files kept).
+# Final gate for a reflect: regenerate the topic index, doctor-check, commit with the
+# folded notes in the message, delete the snapshot.
+# Exit 0 done, 1 no snapshot, possible secret, or doctor failed (nothing committed, snapshot kept).
 set -eu
 dir=${HIPPO_DIR:-$HOME/.hippo}
 here=$(cd "$(dirname "$0")" && pwd)
-case ${1:-} in [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) cutoff=$1 ;;
-  *) echo "usage: finish_reflection.sh YYYY-MM-DD" >&2; exit 1 ;; esac
 cd "$dir"
-msg="reflect: $cutoff $(hostname -s)"
+snap=PENDING.reflecting.md
+[ -s "$snap" ] || { echo "no notes in $snap; run start_reflection.sh first" >&2; exit 1; }
+
+# the notes go into git history; refuse anything that looks like a credential
+if grep -nE 'gh[pousr]_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|xox[abpr]-|-----BEGIN [A-Z ]*PRIVATE KEY' "$snap"; then
+  echo "possible secret in $snap above; redact it there, then rerun" >&2; exit 1
+fi
 
 "$here/update_topic_index.sh"
 "$here/doctor.sh" || { echo "refusing to commit: fix the problems above" >&2; exit 1; }
+msg=$(mktemp)
+{ echo "reflect: $(date +%F) $(hostname -s)"; echo; echo "notes folded:"; cat "$snap"; } > "$msg"
 git add -A -- MEMORY.md TOPIC_INDEX.md topics
-if git diff --cached --quiet; then echo "nothing to commit"
-else git commit -qm "$msg"; echo "committed: $msg"; fi
-
-# the notes are folded in: daily files dated before the cutoff are consumed
-for f in daily/*.md; do
-  b=${f#daily/}
-  case $b in [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.md) ;; *) continue ;; esac
-  if [ "$b" \< "$cutoff" ]; then rm -f "$f"; echo "consumed daily/$b"; fi
-done
+# commit even when no file changed, so dropped notes stay on record
+git commit -q --allow-empty -F "$msg"
+rm -f "$msg" "$snap"
+echo "committed: $(git log -1 --format=%s)"
