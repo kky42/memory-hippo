@@ -2,8 +2,8 @@
 # Make the store and agent instruction files match this skill. No arguments. Idempotent;
 # never overwrites memory.
 #   Creates ~/.hippo if missing, and installs or refreshes block.md in the instruction file of
-#   every agent present (~/.claude, ~/.codex, ~/.pi/agent). Then regenerates TOPIC_INDEX.md and,
-#   if doctor passes, commits tracked store changes.
+#   every agent present (~/.claude, ~/.codex, ~/.pi/agent). Then runs sync_hippo.sh (topic
+#   index, skill links) and, if doctor passes, commits tracked store changes.
 # Exit 0 done, 1 refused or doctor failed (store changes left uncommitted).
 set -eu
 dir=${HIPPO_DIR:-$HOME/.hippo}
@@ -14,11 +14,12 @@ if [ -d "$dir" ] && [ ! -d "$dir/.git" ] && [ -n "$(ls -A "$dir")" ]; then
   echo "$dir exists and is not a hippo store; move it away first" >&2
   exit 1
 fi
-mkdir -p "$dir/topics"
+mkdir -p "$dir/topics" "$dir/skills"
 cd "$dir"
 [ -d .git ] || git init -q
 [ -f MEMORY.md ] || : > MEMORY.md
 [ -f topics/.gitkeep ] || : > topics/.gitkeep
+[ -f skills/.gitkeep ] || : > skills/.gitkeep
 seed() { [ -f "topics/$1.md" ] || printf '# %s\n%s\n' "$1" "$2" > "topics/$1.md"; }
 if [ -z "$(git log -1 --format=%h 2>/dev/null)" ]; then
   seed user "Who the user is: role, background, expertise, goals."
@@ -26,7 +27,7 @@ if [ -z "$(git log -1 --format=%h 2>/dev/null)" ]; then
   seed project "Ongoing work: projects, decisions, deadlines, status."
   seed reference "Where things live: repos, machines, services, URLs, docs."
 fi
-printf '%s\n' '/*' '!/.gitignore' '!/MEMORY.md' '!/TOPIC_INDEX.md' '!/topics/' > .gitignore
+printf '%s\n' '/*' '!/.gitignore' '!/MEMORY.md' '!/TOPIC_INDEX.md' '!/topics/' '!/skills/' > .gitignore
 
 set --
 for f in .claude/CLAUDE.md .codex/AGENTS.md .pi/agent/AGENTS.md; do
@@ -60,12 +61,9 @@ for f in "$@"; do
   rm -f "$tmp"
 done
 
-{
-  printf '# Topic index\n\nGenerated from line 2 of each topic file. Do not edit.\n\n'
-  for f in topics/*.md; do if [ -e "$f" ]; then printf '%s\n' "- $f: $(sed -n 2p "$f")"; fi; done
-} > TOPIC_INDEX.md
+"$here/sync_hippo.sh"
 "$here/doctor.sh" || { echo "store not committed: fix the problems above, then rerun init_hippo.sh" >&2; exit 1; }
-git add -A -- .gitignore MEMORY.md TOPIC_INDEX.md topics
+git add -A -- .gitignore MEMORY.md TOPIC_INDEX.md topics skills
 if git diff --cached --quiet; then echo "store up to date at $dir"
 else
   git diff --cached --stat
