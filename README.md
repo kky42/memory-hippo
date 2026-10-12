@@ -26,23 +26,25 @@ Ask your agent: "Install https://github.com/kky42/memory-hippo and run its init 
 Or by hand:
 
 ```sh
-npx skills add kky42/memory-hippo -g -a claude-code -a codex -a pi
-~/.claude/skills/hippo/scripts/init.sh ~/.claude/CLAUDE.md ~/.codex/AGENTS.md ~/.pi/agent/AGENTS.md
-# or ~/.agents/skills/hippo/scripts/init.sh, wherever the skill landed
+npx skills add kky42/memory-hippo -g -y -a claude-code -a codex -a pi
+~/.agents/skills/hippo/scripts/init_hippo.sh
 ```
 
-Manual copy also works: put `skills/hippo` into `~/.agents/skills/` and `~/.claude/skills/`. Then run `init.sh` as above.
+## Scripts
 
-`init.sh` creates the store, then adds the [injection block](skills/hippo/block.md) to the end of each file you pass it. If a `<memory-hippo>` block is already there, it replaces that block, so re-running after an update refreshes it.
+Every workflow step that touches the store or agent files is a script, so agents never edit them by hand. None take arguments.
 
-## Workflows (in SKILL.md)
-
-| Workflow | What it does |
+| Script | What it does |
 |---|---|
-| init | install the skill (re-running updates it: show the diff, get approval), run `init.sh` on the agent files you choose (adds or refreshes the block) |
-| reflect | `start_reflection.sh` snapshots `PENDING.md`; fold the notes into topics and MEMORY.md; `finish_reflection.sh`: secret check, doctor gate, commit with the notes in the message, delete the snapshot |
+| `init_hippo.sh` | idempotent: create the store if missing, install or refresh the [instruction block](skills/hippo/block.md) for every agent present (`~/.claude`, `~/.codex`, `~/.pi/agent`), regenerate the topic index, commit if doctor passes |
+| `update_hippo.sh` | install the latest skill with `npx skills add`, print the skill diff, run the new `init_hippo.sh` |
+| `start_reflection.sh` | snapshot `PENDING.md` into `PENDING.reflecting.md` |
+| `finish_reflection.sh` | secret check, regenerate the index, doctor gate, commit with the folded notes in the message, delete the snapshot |
+| `doctor.sh` | read-only: every agent present carries exactly `block.md`, store layout, index, budgets, formats |
 
-Run reflect only when you ask: "/hippo reflect". Nothing is scheduled.
+Workflows (init, update, reflect) are in [SKILL.md](skills/hippo/SKILL.md). Run them only when you ask, e.g. "/hippo reflect", "/hippo update". Nothing is scheduled.
+
+Changing the store layout: describe it in SKILL.md and update the allowed entries in `doctor.sh`. There is no migration code: after `update_hippo.sh`, the agent reads the diff and the new SKILL.md, moves content wherever doctor says the store no longer fits, and reruns `init_hippo.sh` until it commits. Tracked files can be restored from the store's git history.
 
 ## Budgets (enforced by `doctor.sh`, never shown to the model as targets)
 

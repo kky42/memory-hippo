@@ -14,7 +14,10 @@ if grep -nE 'gh[pousr]_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|x
   echo "possible secret in $snap above; redact it there, then rerun" >&2; exit 1
 fi
 
-"$here/update_topic_index.sh"
+{
+  printf '# Topic index\n\nGenerated from line 2 of each topic file. Do not edit.\n\n'
+  for f in topics/*.md; do if [ -e "$f" ]; then printf '%s\n' "- $f: $(sed -n 2p "$f")"; fi; done
+} > TOPIC_INDEX.md
 "$here/doctor.sh" || { echo "refusing to commit: fix the problems above" >&2; exit 1; }
 msg=$(mktemp)
 { echo "reflect: $(date +%F) $(hostname -s)"; echo; echo "notes folded:"; cat "$snap"; } > "$msg"
