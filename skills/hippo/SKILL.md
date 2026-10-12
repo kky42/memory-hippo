@@ -21,7 +21,7 @@ Run a workflow only when the user asks for it. If none is named, ask.
 ## Update
 1. Run `scripts/update_hippo.sh`. It installs the latest skill with npx, prints the skill diff, then runs the new `init_hippo.sh` (refreshes the agent blocks, runs doctor, commits if it passes).
 2. If it printed `skill unchanged` and `ok`, stop.
-3. Re-read this file. Wherever the store no longer fits it (doctor's problems, or a changed rule in the diff), bring the store in line: move content from old files to where this file now says (never drop notes, and keep older notes before newer ones; untracked files have no history), delete what the layout no longer has, then rerun `scripts/init_hippo.sh` until it commits.
+3. Re-read this file. Wherever the store no longer fits it (doctor's problems, or a changed rule in the diff), bring the store in line: move content from old files to where this file now says (never drop notes, and keep older notes before newer ones; untracked files have no history), delete what the layout no longer has (doctor names leftovers, including old agent blocks), then rerun `scripts/init_hippo.sh` until it commits.
 4. Tell the user what changed: the skill diff in plain words, what you changed in the store, and any file `init_hippo.sh` committed that you did not edit.
 
 ## Reflect

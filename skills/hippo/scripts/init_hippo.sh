@@ -36,8 +36,8 @@ done
 [ $# -gt 0 ] || { echo "no agent found: expected ~/.claude, ~/.codex, or ~/.pi/agent" >&2; exit 1; }
 for f in "$@"; do
   [ -f "$f" ] || : > "$f"
-  opens=$(grep -c '^<memory-hippo>$' "$f" || true)
-  closes=$(grep -c '^</memory-hippo>$' "$f" || true)
+  opens=$(grep -c '^<hippo>$' "$f" || true)
+  closes=$(grep -c '^</hippo>$' "$f" || true)
   tmp=$(mktemp)
   if [ "$opens" -eq 0 ] && [ "$closes" -eq 0 ]; then
     cat "$f" > "$tmp"
@@ -48,12 +48,12 @@ for f in "$@"; do
     cat "$block" >> "$tmp"
   elif [ "$opens" -eq 1 ] && [ "$closes" -eq 1 ]; then
     awk -v blk="$block" '
-      /^<memory-hippo>$/ { while ((getline l < blk) > 0) print l; skip = 1; next }
-      skip { if ($0 == "</memory-hippo>") skip = 0; next }
+      /^<hippo>$/ { while ((getline l < blk) > 0) print l; skip = 1; next }
+      skip { if ($0 == "</hippo>") skip = 0; next }
       { print }' "$f" > "$tmp"
   else
     rm -f "$tmp"
-    echo "$f: malformed <memory-hippo> block; fix it by hand" >&2
+    echo "$f: malformed <hippo> block; fix it by hand" >&2
     exit 1
   fi
   if cmp -s "$tmp" "$f"; then echo "$f: block up to date"

@@ -14,11 +14,14 @@ chars() { wc -m < "$1" | tr -d ' '; }
 for f in .claude/CLAUDE.md .codex/AGENTS.md .pi/agent/AGENTS.md; do
   [ -d "$HOME/$(dirname "$f")" ] || continue
   f=$HOME/$f
-  n=$(grep -c '^<memory-hippo>$' "$f" 2>/dev/null || true)
-  if [ "${n:-0}" -eq 0 ]; then say "$f: no <memory-hippo> block; run init_hippo.sh"
-  elif [ "$n" -gt 1 ]; then say "$f: $n <memory-hippo> blocks; keep one, then run init_hippo.sh"
-  elif ! sed -n '/^<memory-hippo>$/,/^<\/memory-hippo>$/p' "$f" | cmp -s - "$here/../block.md"; then
-    say "$f: <memory-hippo> block differs from block.md; run init_hippo.sh"
+  n=$(grep -c '^<hippo>$' "$f" 2>/dev/null || true)
+  if [ "${n:-0}" -eq 0 ]; then say "$f: no <hippo> block; run init_hippo.sh"
+  elif [ "$n" -gt 1 ]; then say "$f: $n <hippo> blocks; keep one, then run init_hippo.sh"
+  elif ! sed -n '/^<hippo>$/,/^<\/hippo>$/p' "$f" | cmp -s - "$here/../block.md"; then
+    say "$f: <hippo> block differs from block.md; run init_hippo.sh"
+  fi
+  if grep -q '^</*memory-hippo>$' "$f" 2>/dev/null; then
+    say "$f: old <memory-hippo> block from an earlier hippo; delete that block, keep <hippo>"
   fi
 done
 
