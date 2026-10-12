@@ -55,7 +55,7 @@ Changing the store layout: describe it in SKILL.md and update the allowed entrie
 | topic files | 20 |
 | PENDING.md | none enforced; agents suggest a reflect past ~40 lines |
 
-`doctor.sh` also fails on date stamps like `(2026-10-12)`, and warns on dates in the future and when the same path or issue number appears in more than one file.
+`doctor.sh` also fails on date stamps like `(2026-10-12)` or `(2026-06-30~07-02)`, and warns on dates in the future and when the same path or issue number appears in more than one file.
 
 Counts use `wc -m` with `LC_ALL=en_US.UTF-8`; a system without that locale counts bytes, which makes the caps ~3x tighter for Chinese.
 

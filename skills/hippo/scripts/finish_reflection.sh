@@ -10,7 +10,7 @@ snap=PENDING.reflecting.md
 [ -s "$snap" ] || { echo "no notes in $snap; run start_reflection.sh first" >&2; exit 1; }
 
 # the notes go into git history; refuse anything that looks like a credential
-if grep -nE 'gh[pousr]_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|xox[abpr]-|-----BEGIN [A-Z ]*PRIVATE KEY' "$snap"; then
+if grep -nE 'gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|hf_[A-Za-z0-9]{20,}|glpat-[A-Za-z0-9_-]{20,}|npm_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|xox[abpr]-|-----BEGIN [A-Z ]*PRIVATE KEY' "$snap"; then
   echo "possible secret in $snap above; redact it there, then rerun" >&2; exit 1
 fi
 
