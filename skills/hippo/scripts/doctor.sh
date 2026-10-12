@@ -120,8 +120,8 @@ done
 
 set -- MEMORY.md
 for f in topics/*.md; do [ -e "$f" ] && set -- "$@" "$f"; done
-if grep -inE '\(as of|\(20[0-9]{2}-[0-9]{2}-[0-9]{2}' "$@" 2>/dev/null; then
-  say 'date stamps in the lines above; a date belongs only inside a fact, like a deadline'
+if grep -inE '^(- )?20[0-9]{2}-[0-9]{2}-[0-9]{2}:|\((as of )?20[0-9]{2}-[0-9]{2}-[0-9]{2}' "$@" 2>/dev/null; then
+  say 'date stamps in the lines above; write a date inside a fact (like a deadline), not as a line or paren stamp'
 fi
 
 today=$(date +%F)
